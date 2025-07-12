@@ -6,7 +6,7 @@ import { AuthProvider, useAuth } from './context/auth-context'
 import LoginPage from './components/LoginPage'
 import {AdminDashboard,GuestDashboard, Dashboard} from './pages/Dashboard'
 import AnswerPage from './pages/AnswerPage' // ⬅️ create this next
-
+import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -137,6 +137,7 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <div className="App">
+      <Toaster position="top-right" />
       <ThemeProvider>
         <AuthProvider>
           <Router>

@@ -264,3 +264,29 @@ export const getAnswersByQuestion = async (
       });
     }
   };
+
+  
+  export const voteAnswer = async (req: Request, res: Response) => {
+    const { answerId } = req.params
+    const { vote } = req.body
+  
+    if (typeof vote !== 'number' || ![1, -1].includes(vote)) {
+      return res.status(400).json({ success: false, error: 'Invalid vote value' })
+    }
+  
+    try {
+      const answer = await Answer.findById(answerId)
+      if (!answer) {
+        return res.status(404).json({ success: false, error: 'Answer not found' })
+      }
+  
+      answer.votes += vote
+      await answer.save()
+  
+      return res.status(200).json({ success: true, data: answer })
+    } catch (err) {
+      console.error(err)
+      return res.status(500).json({ success: false, error: 'Server error while voting' })
+    }
+  }
+  

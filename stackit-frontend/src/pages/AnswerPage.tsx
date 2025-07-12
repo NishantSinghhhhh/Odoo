@@ -1,92 +1,121 @@
-// src/pages/AnswerPage.tsx
+import React, { useState } from 'react'
+import { CheckCircle, ThumbsUp } from 'lucide-react'
+import useAllQuestionsWithAnswers from '../hooks/useQuestionsWithAnswers'
+import toast from 'react-hot-toast'
 
-import React from "react"
-import { useNavigate, useParams } from "react-router-dom"
-import { CheckCircle, ThumbsUp, X } from "lucide-react"
-import useQuestionsWithAnswers from "../hooks/useQuestionsWithAnswers"
+const API_BASE_URL = 'http://localhost:5000/api'
 
-const AnswerPage: React.FC = () => {
-  const { questionId } = useParams<{ questionId: string }>()
-  const navigate = useNavigate()
+const AllQuestionsWithAnswersPage: React.FC = () => {
+  const { questions, isLoading, error, refetch } = useAllQuestionsWithAnswers()
+  const [upvoting, setUpvoting] = useState<string | null>(null)
 
-  const {
-    questions,
-    isLoading,
-    error,
-    refetch
-  } = useQuestionsWithAnswers()
+  const handleVote = async (answerId: string) => {
+    try {
+      setUpvoting(answerId)
+      const res = await fetch(`${API_BASE_URL}/answers/${answerId}/vote`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ vote: 1 })
+      })
 
-  const question = questions.find((q) => q._id === questionId)
+      if (!res.ok) {
+        throw new Error('Failed to vote')
+      }
 
-  if (isLoading) return <div className="p-6 text-gray-700">Loading...</div>
-  if (error) return <div className="p-6 text-red-600">Error: {error}</div>
-  if (!question) return <div className="p-6 text-gray-600">Question not found.</div>
+      toast.success('Answer upvoted!') // ✅ Toast added here
+
+      await refetch()
+    } catch (err) {
+      console.error('Vote error:', err)
+      toast.error('Something went wrong while voting.')
+    } finally {
+      setUpvoting(null)
+    }
+  }
+
+  if (isLoading) {
+    return null // ✅ Removed loading message
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        <p>{error}</p>
+        <button
+          onClick={refetch}
+          className="mt-2 px-4 py-2 bg-red-600 text-white rounded"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-8 relative">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="absolute top-4 right-4 text-gray-600 hover:text-gray-800"
-      >
-        <X className="h-6 w-6" />
-      </button>
+    <div className="p-6 space-y-10 max-w-4xl mx-auto">
+      {questions.map((q) => (
+        <div key={q._id} className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-bold mb-2 text-gray-900">{q.title}</h2>
+          <div className="text-sm text-gray-600 mb-2">{q.description}</div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {q.tags.map((tag) => (
+              <span key={tag} className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+          <div className="flex justify-between text-sm text-gray-500 mb-4">
+            <span>Asked by {q.author.username}</span>
+            <span>{q.votes} votes • {q.views} views</span>
+          </div>
 
-      {/* Question Section */}
-      <div className="mb-6 bg-white shadow-sm rounded-lg p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-2">{question.title}</h2>
-        <p className="text-gray-700 mb-4">{question.description}</p>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {question.tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <p className="text-sm text-gray-500">
-          Asked by <strong>{question.author.username}</strong> on{" "}
-          {new Date(question.createdAt).toLocaleDateString()}
-        </p>
-      </div>
+          <h3 className="text-lg font-semibold mb-3 text-gray-800">
+            {q.answers.length} {q.answers.length === 1 ? 'Answer' : 'Answers'}
+          </h3>
 
-      {/* Answers Section */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Answers</h3>
-        {question.answers.length === 0 ? (
-          <p className="text-gray-600">No answers yet.</p>
-        ) : (
-          question.answers.map((answer) => (
-            <div
-              key={answer._id}
-              className={`p-4 mb-4 border rounded-md ${
-                answer.isAccepted ? "border-green-500 bg-green-50" : "border-gray-200"
-              }`}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">
-                  Answered by <strong>{answer.author.username}</strong>
-                </span>
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <ThumbsUp className="w-4 h-4 text-blue-600" />
-                  {answer.votes} votes
-                  {answer.isAccepted && (
-                    <>
-                      <CheckCircle className="ml-2 h-4 w-4 text-green-600" />
-                      <span className="text-green-600">Accepted</span>
-                    </>
+          <div className="space-y-4">
+            {q.answers
+              .sort((a, b) => Number(b.isAccepted) - Number(a.isAccepted))
+              .map((a) => (
+                <div
+                  key={a._id}
+                  className={`border rounded-lg p-4 ${
+                    a.isAccepted ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                  }`}
+                >
+                  {a.isAccepted && (
+                    <div className="flex items-center text-green-600 text-sm mb-2">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Accepted Answer
+                    </div>
                   )}
-                </span>
-              </div>
-              <div className="text-gray-800 whitespace-pre-wrap">{answer.content}</div>
-            </div>
-          ))
-        )}
-      </div>
+                  <p className="text-gray-800 mb-2">{a.content}</p>
+                  <div className="flex justify-between text-sm text-gray-500 border-t pt-2">
+                    <div>
+                      By <span className="font-medium">{a.author.username}</span> on{' '}
+                      {new Date(a.createdAt).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={upvoting === a._id}
+                        onClick={() => handleVote(a._id)}
+                        className="hover:text-blue-600 disabled:opacity-50"
+                        title="Upvote"
+                      >
+                        <ThumbsUp className="h-4 w-4" />
+                      </button>
+                      <span>{a.votes}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
 
-export default AnswerPage
+export default AllQuestionsWithAnswersPage
