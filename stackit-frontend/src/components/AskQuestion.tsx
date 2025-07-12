@@ -360,21 +360,22 @@ const AskQuestionPage: React.FC<AskQuestionPageProps> = ({ onSubmit, isModal = f
                             <Smile size={16} />
                           </button>
                           {showEmojiPicker && (
-                            <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
-                              <div className="grid grid-cols-6 gap-1">
+                        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                                <div className="flex gap-1">
                                 {commonEmojis.map((emoji, index) => (
-                                  <button
+                                    <button
                                     key={index}
                                     type="button"
                                     onClick={() => insertEmoji(emoji)}
                                     className="p-2 hover:bg-gray-100 rounded text-lg transition-colors"
-                                  >
+                                    >
                                     {emoji}
-                                  </button>
+                                    </button>
                                 ))}
-                              </div>
+                                </div>
                             </div>
-                          )}
+                            )}
+
                         </div>
                         <button
                           type="button"

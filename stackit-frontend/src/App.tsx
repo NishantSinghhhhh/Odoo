@@ -5,13 +5,14 @@ import { ThemeProvider } from './context/theme-context'
 import { AuthProvider, useAuth } from './context/auth-context'
 import LoginPage from './components/LoginPage'
 import {AdminDashboard,GuestDashboard, Dashboard} from './pages/Dashboard'
+import AnswerPage from './pages/AnswerPage' // ⬅️ create this next
 
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 // Loading Component
 const LoadingSpinner: React.FC = () => (
-  <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+  <div className="min-h-screen bg-gray-200 flex items-center justify-center">
     <div className="text-center">
       <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
       <p className="text-white text-lg">Loading StackIt...</p>
@@ -100,7 +101,14 @@ const AppContent: React.FC = () => {
           </ProtectedRoute>
         } 
       />
-
+      <Route 
+      path="/dashboard/user/answer" 
+      element={
+        <ProtectedRoute allowedRoles={['user', 'admin']}>
+          <AnswerPage />
+        </ProtectedRoute>
+      }
+    />
       <Route 
         path="/dashboard/admin" 
         element={

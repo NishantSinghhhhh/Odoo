@@ -61,6 +61,24 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
       }
     }, [value])
 
+    // Add CSS for placeholder
+    useEffect(() => {
+      const style = document.createElement('style')
+      style.textContent = `
+        [contenteditable][data-placeholder]:empty:before {
+          content: attr(data-placeholder);
+          color: #9ca3af;
+          pointer-events: none;
+          display: block;
+        }
+      `
+      document.head.appendChild(style)
+      
+      return () => {
+        document.head.removeChild(style)
+      }
+    }, [])
+
     // Expose methods to parent component
     useImperativeHandle(ref, () => ({
       clear: () => {
@@ -397,8 +415,8 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
               <div className="w-px h-6 bg-gray-300 mx-1"></div>
 
               {/* Media & Links */}
-              <div className="flex items-center">
-                <div className="relative">
+              <div className="flex items-center ">
+                <div className="relative ">
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
@@ -409,8 +427,8 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
                     <Smile size={16} />
                   </button>
                   {showEmojiPicker && !disabled && (
-                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg p-3 shadow-lg z-10">
-                      <div className="grid grid-cols-6 gap-1">
+                    <div className="absolute top-full left-0 mt-2 bg border border-gray-200 rounded-lg p-3 shadow-lg z-10">
+                      <div className="flex gap-1">
                         {commonEmojis.map((emoji, index) => (
                           <button
                             key={index}
@@ -499,16 +517,6 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
             onKeyDown={handleKeyDown}
             data-placeholder={placeholder}
           />
-          
-          {/* CSS for placeholder */}
-          <style jsx>{`
-            [contenteditable][data-placeholder]:empty:before {
-              content: attr(data-placeholder);
-              color: #9ca3af;
-              pointer-events: none;
-              display: block;
-            }
-          `}</style>
         </div>
       </div>
     )

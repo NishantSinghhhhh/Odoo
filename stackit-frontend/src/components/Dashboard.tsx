@@ -6,8 +6,10 @@ import { useAuth } from "../context/auth-context"
 import { HelpCircle, MessageSquare, Award, PlusCircle, CheckCircle, ThumbsUp, X } from "lucide-react"
 import AskQuestionPage from "./AskQuestion" // Import the component
 // import APITestComponent from "./APITestComponent" // Uncomment to add debug panel
-
+import { useEffect } from "react"
 // Types for question creation
+import { useNavigate } from "react-router-dom"
+import AnswerForm from "./AnswerForm"
 interface CreateQuestionData {
   title: string
   description: string
@@ -18,8 +20,37 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuth()
   const [showQuestionModal, setShowQuestionModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [questions, setQuestions] = useState<any[]>([])
+  const [showAnswerModal, setShowAnswerModal] = useState(false)
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null)
+  
+  const handleOpenAnswerModal = (questionId: string) => {
+    setSelectedQuestionId(questionId)
+    setShowAnswerModal(true)
+    
+  }
+  const navigate = useNavigate()
 
   // Handle question submission
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/questions")
+        const result = await response.json()
+  
+        if (!result.success) {
+          throw new Error(result.error || "Failed to fetch questions")
+        }
+  
+        setQuestions(result.data.data)
+      } catch (error) {
+        console.error("Failed to fetch questions:", error)
+      }
+    }
+  
+    fetchQuestions()
+  }, [])
+
   const handleQuestionSubmit = async (questionData: CreateQuestionData): Promise<void> => {
     try {
       setIsSubmitting(true)
@@ -127,20 +158,27 @@ const Dashboard: React.FC = () => {
         {/* Debug Panel - Uncomment to use */}
         {/* <APITestComponent /> */}
         
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Your Dashboard</h2>
-            <p className="text-gray-600 mt-1">Track your activity and contributions</p>
-          </div>
-          <button 
-            onClick={() => setShowQuestionModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Ask Question
-          </button>
-        </div>
+        <div className="flex gap-4">
+        {/* Ask Question */}
+        <button 
+        onClick={() => setShowQuestionModal(true)}
+        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+        >
+        <PlusCircle className="mr-2 h-5 w-5" />
+        Ask Question
+        </button>
 
+        {/* 🆕 Go to Answer Page Button */}
+        <button 
+        onClick={() => navigate("/dashboard/user/answer", {
+            state: { questionId: "dummy-question-id" } // Replace this later with real id
+        })}
+        className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100"
+        >
+        <MessageSquare className="mr-2 h-5 w-5" />
+        Go to Answer Page
+        </button>
+    </div>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white overflow-hidden shadow-sm rounded-lg">
@@ -198,77 +236,95 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="px-6 py-5 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
-          </div>
-          <div className="divide-y divide-gray-200">
-            <div className="px-6 py-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 pt-1">
-                  <HelpCircle className="h-5 w-5 text-blue-500" />
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900">Your question: "How to handle React state?"</h4>
-                    <span className="inline-flex items-center text-xs text-gray-500">
-                      <ThumbsUp className="mr-1 h-4 w-4" />
-                      15 votes
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">Asked 1 day ago • 3 answers</p>
-                  <div className="mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                      react
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      state-management
-                    </span>
-                  </div>
-                </div>
-              </div>
+            {/* Recent Activity */}
+            <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+            <div className="px-6 py-5 border-b border-gray-200">
+                <h3 className="text-lg font-medium text-gray-900">Recent Questions</h3>
             </div>
-            <div className="px-6 py-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 pt-1">
-                  <MessageSquare className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      You answered: "JavaScript async/await patterns"
-                    </h4>
-                    <span className="inline-flex items-center text-xs text-gray-500">
-                      <ThumbsUp className="mr-1 h-4 w-4" />8 votes
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Answered 2 days ago •
-                    <span className="inline-flex items-center ml-1 text-green-600">
-                      <CheckCircle className="mr-1 h-4 w-4" /> Accepted
-                    </span>
-                  </p>
-                  <div className="mt-1">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
-                      javascript
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      async
-                    </span>
-                  </div>
-                </div>
-              </div>
+
+            <div className="divide-y divide-gray-200">
+                {questions.length === 0 ? (
+                <div className="px-6 py-4 text-sm text-gray-500">No questions found.</div>
+                ) : (
+                questions.map((q) => (
+                    <div key={q._id} className="px-6 py-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0 pt-1">
+                        <HelpCircle className="h-5 w-5 text-blue-500" />
+                      </div>
+                  
+                      <div className="ml-4 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-medium text-gray-900">
+                            {q.title}
+                          </h4>
+                          <span className="inline-flex items-center text-xs text-gray-500">
+                            <ThumbsUp className="mr-1 h-4 w-4" />
+                            {q.votes || 0} votes
+                          </span>
+                        </div>
+                  
+                        {/* ✅ Answer Button (just below votes) */}
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            onClick={() => handleOpenAnswerModal(q._id)}
+                            className="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                          >
+                            Answer
+                          </button>
+                        </div>
+                  
+                        <p className="mt-1 text-sm text-gray-500">
+                          Asked by {q.author?.username || "Anonymous"} •{" "}
+                          {new Date(q.createdAt).toLocaleDateString()}
+                        </p>
+                  
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {(q.tags || []).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>                  
+                ))
+                )}
             </div>
-          </div>
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="text-sm">
-              <a href="#" className="font-medium text-gray-900 hover:text-gray-700">
-                View all activity <span aria-hidden="true">→</span>
-              </a>
+            {showAnswerModal && selectedQuestionId && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-auto relative p-6">
+                {/* Close Button */}
+                <button
+                    onClick={() => setShowAnswerModal(false)}
+                    className="absolute top-4 right-4 z-10 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                    <X className="h-6 w-6" />
+                </button>
+
+                <h2 className="text-lg font-semibold mb-4 text-gray-800">Post Your Answer</h2>
+
+                <AnswerForm
+                    questionId={selectedQuestionId}
+                    onClose={() => setShowAnswerModal(false)}
+                />
+                </div>
             </div>
-          </div>
-        </div>
+            )}
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <div className="text-sm">
+                <a href="#" className="font-medium text-gray-900 hover:text-gray-700">
+                    View all questions <span aria-hidden="true">→</span>
+                </a>
+                </div>
+            </div>
+            </div>
+
       </div>
 
       {/* Question Modal */}
